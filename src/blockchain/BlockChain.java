@@ -12,8 +12,8 @@ public class BlockChain {
         blockChain = new LinkedList<>();
     }
 
-    public void addBlock() {
-        this.blockChain.add(new Block(blockChain.size() == 0 ? "0" : blockChain.get(blockChain.size() - 1).getHash()));
+    public void addBlock(int zeros) {
+        this.blockChain.add(new Block(blockChain.size() == 0 ? "0" : blockChain.get(blockChain.size() - 1).getHash(), zeros));
     }
 
     @Override
