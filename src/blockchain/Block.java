@@ -1,78 +1,67 @@
 package blockchain;
 
-import java.security.MessageDigest;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Random;
-
 public class Block {
 
-    private static int count = 0;
-    private final int id;
-    private final long timestamp;
-    private final String previousHash;
-    private int magicNumber;
+    private final long   minerId;
+    private final int    id;
+    private final long   timestamp;
+    private final int    magicNumber;
+    private final String prevHash;
     private final String hash;
-    private int workTime;
+    private final long   generationTime;
+    private int          zerosChanges;
 
-    public Block(String previousHash, int zeros) {
-        this.id = ++count;
-        this.timestamp = System.currentTimeMillis();
-        this.previousHash = previousHash;
-        proveBlock(zeros);
-        this.hash = applySha256(this.toString());
+    public Block(long minerId, int id, long timestamp, int magicNumber,
+                 String prevHash, String hash, long generationTime) {
+        this.minerId = minerId;
+        this.id = id;
+        this.timestamp = timestamp;
+        this.magicNumber = magicNumber;
+        this.prevHash = prevHash;
+        this.hash = hash;
+        this.generationTime = generationTime;
     }
 
-    public String getPreviousHash() {
-        return previousHash;
+    public int getId() {
+        return id;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public int getMagicNumber() {
+        return magicNumber;
+    }
+
+    public String getPrevHash() {
+        return prevHash;
     }
 
     public String getHash() {
         return hash;
     }
 
+    public long getGenerationTime() {
+        return generationTime;
+    }
+
+    public void setZerosChanges(int zerosChanges) {
+        this.zerosChanges = zerosChanges;
+    }
+
     @Override
     public String toString() {
-        return String.format("Block:\n" +
-            "Id: %d\n" +
-            "Timestamp: %d\n" +
-            "Magic number: %d\n" +
-            "Hash of the previous block:\u0020\n" +
-            "%s\n" +
-            "Hash of the block:\u0020\n" +
-            "%s\n" +
-            "Block was generating for %d seconds\n", id, timestamp, magicNumber, previousHash, hash, workTime);
-    }
-
-    private void proveBlock(int zeros) {
-        StringBuilder zerosPrefix = new StringBuilder();
-        for (int i = 0; i < zeros; i++) {
-            zerosPrefix.append("0");
-        }
-        Random random = new Random();
-        var startTime = Instant.now();
-        while (true) {
-            this.magicNumber = random.nextInt();
-            if (applySha256(this.toString()).startsWith(zerosPrefix.toString())) {
-                break;
-            }
-        }
-        this.workTime = Math.toIntExact(Duration.between(startTime, Instant.now()).toSeconds());
-    }
-
-    private String applySha256(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes("UTF-8"));
-            StringBuilder hexString = new StringBuilder();
-            for (byte elem: hash) {
-                String hex = Integer.toHexString(0xff & elem);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception ex) {
-            throw new RuntimeException();
-        }
+        return "Block:" +
+                "\nCreated by miner # " + minerId +
+                "\nId: " + id +
+                "\nTimestamp: " + timestamp +
+                "\nMagic number: " + magicNumber +
+                "\nHash of the previous block:\n" + prevHash +
+                "\nHash of the block:\n" + hash +
+                "\nBlock was generating for " + generationTime + " seconds\n" +
+                (zerosChanges > 0 ? "N was increased to " + zerosChanges + "\n"
+                        : zerosChanges < 0 ? "N was decreased by 1\n"
+                        : "N stays the same\n");
     }
 }
