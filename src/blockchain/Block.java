@@ -1,67 +1,108 @@
 package blockchain;
 
-public class Block {
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
-    private final long   minerId;
-    private final int    id;
-    private final long   timestamp;
-    private final int    magicNumber;
-    private final String prevHash;
-    private final String hash;
-    private final long   generationTime;
-    private int          zerosChanges;
+public class Block implements Serializable {
 
-    public Block(long minerId, int id, long timestamp, int magicNumber,
-                 String prevHash, String hash, long generationTime) {
+    private static final long serialVersionUID = 1L;
+
+    private int minerId;
+    private int id;
+    private long timestamp;
+    private String prevHash;
+    private String hash;
+    private List<Message> data;
+    private int seed;
+    private long totalTime;
+
+    private String numOfN = "";
+
+    public Block(int minerId, int id, long timestamp, String prevHash, int seed,
+                 String hash, List<Message> data, long totalTime) {
         this.minerId = minerId;
         this.id = id;
         this.timestamp = timestamp;
-        this.magicNumber = magicNumber;
         this.prevHash = prevHash;
         this.hash = hash;
-        this.generationTime = generationTime;
+        this.data = new ArrayList<>();
+        this.data.addAll(data);
+        this.seed = seed;
+        this.totalTime = totalTime;
     }
 
-    public int getId() {
-        return id;
+
+    @Override
+    public String toString() {
+        return
+                "Block: \n" +
+                        "Created by miner # " + minerId + "\n" +
+                        "Id: " + id + "\n" +
+                        "Timestamp: " + timestamp + "\n" +
+                        "Magic number: " + seed + "\n" +
+                        "Hash of the previous block: \n" + prevHash + "\n" +
+                        "Hash of the block: \n" + hash + "\n" +
+                        "Block data: \n" + viewChat() +
+                        "Block was generating for " + totalTime / 1000 + " seconds \n" +
+                        numOfN;
+
     }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
 
-    public int getMagicNumber() {
-        return magicNumber;
+    public String getHash() {
+        return hash;
     }
 
     public String getPrevHash() {
         return prevHash;
     }
 
-    public String getHash() {
-        return hash;
+    public long getTotalTime() {
+        return totalTime;
     }
 
-    public long getGenerationTime() {
-        return generationTime;
+    public int getId() {
+        return id;
     }
 
-    public void setZerosChanges(int zerosChanges) {
-        this.zerosChanges = zerosChanges;
+    public List<Message> getData() {
+        return data;
     }
 
-    @Override
-    public String toString() {
-        return "Block:" +
-                "\nCreated by miner # " + minerId +
-                "\nId: " + id +
-                "\nTimestamp: " + timestamp +
-                "\nMagic number: " + magicNumber +
-                "\nHash of the previous block:\n" + prevHash +
-                "\nHash of the block:\n" + hash +
-                "\nBlock was generating for " + generationTime + " seconds\n" +
-                (zerosChanges > 0 ? "N was increased to " + zerosChanges + "\n"
-                        : zerosChanges < 0 ? "N was decreased by 1\n"
-                        : "N stays the same\n");
+    public String viewChat() {
+        if (data == null) return "no messages";
+        StringBuilder sb = new StringBuilder();
+        for (Message s : data) {
+            sb.append(s.getText()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    public int getSeed() {
+        return seed;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setN(Block block, int prefix) {
+        int prevN = 0;
+        for (int l = 0; l < block.getHash().length(); l++) {
+            if (block.getHash().charAt(l) == '0') {
+                prevN++;
+            } else {
+                break;
+            }
+        }
+
+        if (prefix > prevN) {
+            this.numOfN = "N was increased to " + prefix + "\n";
+        } else if (prefix < prevN) {
+            this.numOfN = "N was decreased by " + prefix + "\n";
+        } else {
+            this.numOfN = "N stays the same" + "\n";
+        }
     }
 }
