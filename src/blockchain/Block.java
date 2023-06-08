@@ -1,108 +1,107 @@
 package blockchain;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.security.MessageDigest;
+import java.util.Date;
 
-public class Block implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+public class Block {
 
-    private int minerId;
-    private int id;
-    private long timestamp;
-    private String prevHash;
+    private final int id;
+    private final long timeStamp;
+    private int magicNumber;
+    private String previousHash;
+    private String data;
+
     private String hash;
-    private List<Message> data;
-    private int seed;
-    private long totalTime;
+    private static int lastId;
+    private final long creationDuration;
+    private final long miner;
+    private final String prefixState;
 
-    private String numOfN = "";
+    private Message message = new Message();
 
-    public Block(int minerId, int id, long timestamp, String prevHash, int seed,
-                 String hash, List<Message> data, long totalTime) {
-        this.minerId = minerId;
-        this.id = id;
-        this.timestamp = timestamp;
-        this.prevHash = prevHash;
-        this.hash = hash;
-        this.data = new ArrayList<>();
-        this.data.addAll(data);
-        this.seed = seed;
-        this.totalTime = totalTime;
+
+    public Block(int lengthOfPrefix, long miner) {
+        long startTime = System.nanoTime();
+        this.timeStamp = new Date().getTime();
+        this.hash = mineBlock(lengthOfPrefix);
+        this.id = ++lastId;
+        this.creationDuration = (System.nanoTime() - startTime) / 1000000;//to milliseconds
+        this.miner = miner;
+        this.data = message.getMessages(id - 1);
+        if (this.creationDuration > 60) {
+            prefixState = "N was decreased by 1";
+        } else if (this.creationDuration < 10) {
+            prefixState = String.format("N was increased to %d", lengthOfPrefix + 1);
+        } else {
+            prefixState = "N stays the same";
+        }
     }
-
-
-    @Override
-    public String toString() {
-        return
-                "Block: \n" +
-                        "Created by miner # " + minerId + "\n" +
-                        "Id: " + id + "\n" +
-                        "Timestamp: " + timestamp + "\n" +
-                        "Magic number: " + seed + "\n" +
-                        "Hash of the previous block: \n" + prevHash + "\n" +
-                        "Hash of the block: \n" + hash + "\n" +
-                        "Block data: \n" + viewChat() +
-                        "Block was generating for " + totalTime / 1000 + " seconds \n" +
-                        numOfN;
-
-    }
-
 
     public String getHash() {
         return hash;
     }
 
-    public String getPrevHash() {
-        return prevHash;
+
+    public long getCreationDuration() {
+        return creationDuration;
     }
 
-    public long getTotalTime() {
-        return totalTime;
+    public void setPreviousHash(String previousHash) {
+        this.previousHash = previousHash;
     }
 
-    public int getId() {
-        return id;
+    public String getData() {
+        return id + previousHash + timeStamp  + data + magicNumber;
     }
 
-    public List<Message> getData() {
-        return data;
+
+    @Override
+    public String toString() {
+        return "Block:" + '\n' +
+                "Created by miner" + miner + '\n' +
+                "miner" + miner + " gets 100 VC" + '\n' +
+                "Id: " + id + '\n' +
+                "Timestamp: " + timeStamp + '\n' +
+                "Magic number: " + magicNumber + '\n' +
+                "Hash of the previous block: " + '\n' +
+                previousHash + '\n' +
+                "Hash of the block: " + '\n' +
+                hash + '\n' +
+                "Block data: " +
+                this.data + '\n' +
+                "Block was generating for " + creationDuration + " seconds" + '\n' +
+                prefixState + '\n';
     }
 
-    public String viewChat() {
-        if (data == null) return "no messages";
-        StringBuilder sb = new StringBuilder();
-        for (Message s : data) {
-            sb.append(s.getText()).append("\n");
-        }
-        return sb.toString();
+    private String calculateBlockHash() {
+        return applySha256(this.getData());
     }
 
-    public int getSeed() {
-        return seed;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setN(Block block, int prefix) {
-        int prevN = 0;
-        for (int l = 0; l < block.getHash().length(); l++) {
-            if (block.getHash().charAt(l) == '0') {
-                prevN++;
-            } else {
-                break;
+    public static String applySha256(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+            for (byte elem : hash) {
+                String hex = Integer.toHexString(0xff & elem);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
             }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        if (prefix > prevN) {
-            this.numOfN = "N was increased to " + prefix + "\n";
-        } else if (prefix < prevN) {
-            this.numOfN = "N was decreased by " + prefix + "\n";
-        } else {
-            this.numOfN = "N stays the same" + "\n";
+    public String mineBlock(int prefix) {
+        if (prefix == 0) return calculateBlockHash();
+        hash = "                                                      ";
+        String prefixString = new String(new char[prefix]).replace('\0', '0');
+        while (!hash.substring(0, prefix).equals(prefixString)) {
+            magicNumber++;
+            hash = calculateBlockHash();
         }
+        return hash;
     }
 }
